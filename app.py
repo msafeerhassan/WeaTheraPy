@@ -44,17 +44,6 @@ Wind Speed: {windSpeed}""")
     else:
         print(f"Can't fetch data from OpenWeatherMap API.\nStatus Code: {owmAPIresponse.status_code}")
 
-def aqiDataAPI(lat, lon):
-    aqiAPIURL = f"http://api.waqi.info/feed/geo:{lat};{lon}/?token={WAQIAPI}"
-    aqiAPIresponse = requests.get(aqiAPIURL)
-    if aqiAPIresponse.status_code == 200:
-        aqiAPIData = aqiAPIresponse.json()
-        print(aqiAPIData)
-    else:
-        print(f"Can't fetch Data from API.\nStatus Code: {aqiAPIresponse.status_code}")
-
 # weatherDataAPI(userIPdataAPI()[0], userIPdataAPI()[1])
 
 # userIPdataAPI()
-
-aqiDataAPI(weatherDataAPI(userIPdataAPI()[0], userIPdataAPI()[1])[0], weatherDataAPI(userIPdataAPI()[0], userIPdataAPI()[1])[1])
