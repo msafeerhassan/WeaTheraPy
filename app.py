@@ -1,12 +1,6 @@
-# ask user about location -> default vs input -> ask user what to see in it -> current temp, max temp, min temp, humidity, wind speed -> option for selecting multiple -> display that
+import requests, time
 
-from dotenv import load_dotenv
-import os, requests
-
-load_dotenv()
-
-WAQIAPI = os.getenv("WAQI_API")
-OWMAPI = os.getenv("OPEN_WEATHER_MAP_API")
+OWMAPI = input("Please enter your OpenWeatherMap API Key: ")
 
 ipAPIURL = "http://ip-api.com/json/"
 
@@ -42,21 +36,7 @@ def weatherDataAPI(Lat, Lon):
         minTemp = owmAPIdata['main']['temp_min'] - 273.15
         maxTemp = owmAPIdata['main']['temp_max'] -273.15
         humidity = owmAPIdata['main']['humidity']
-        windSpeed = owmAPIdata['wind']['speed']
-#         print(f"""--------- WEATHER DASHBOARD ---------
-# -------------------------------------
-# |City: {cityName}                     |
-# -------------------------------------
-# |Temperature: {temperature:.1f} °C               |
-# -------------------------------------
-# |Minimum Temperature Today: {minTemp:.1f} °C |
-# -------------------------------------
-# |Maximum Temperature Today: {maxTemp:.1f} °C |
-# -------------------------------------
-# |Humidity: {humidity}                       |   
-# -------------------------------------
-# |Wind Speed: {windSpeed}                   |
-# -------------------------------------""")    
+        windSpeed = owmAPIdata['wind']['speed']  
         dataDict = {
             "City": f"{cityName}",
             "Current Temperature": f"{temperature}",
@@ -69,7 +49,25 @@ def weatherDataAPI(Lat, Lon):
     else:
         print(f"Can't fetch data from OpenWeatherMap API.\nStatus Code: {owmAPIresponse.status_code}")
 
-def featureSelection(dict, userChoice):
+def forecastChecking(lat, lon):
+    ForecastAPIUrl = f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={OWMAPI}"
+    forecastResponse = requests.get(ForecastAPIUrl)
+    if forecastResponse.status_code == 200:
+        forecastData = forecastResponse.json()
+        
+        forecastDict = {}
+
+        for i in forecastData['list']:
+            timeStamp = i['dt_txt']
+            tempCelsius = i['main']['temp'] - 273.15
+            forecastDict[timeStamp] = f"{tempCelsius:.1f}"
+        
+        return forecastDict
+    else:
+        print(f"Error fetching data.\nStatus Code: {forecastResponse.status_code}")
+        return {}
+
+def featureSelection(dict, userChoice, lat=None, lon=None):
     if userChoice == 1:
         return {"Current Temperature": dict['Current Temperature']}
     elif userChoice == 2:
@@ -84,59 +82,85 @@ def featureSelection(dict, userChoice):
         return {
             "Wind Speed": dict['Wind Speed']
         }
-    else:
+    elif userChoice == 6:
         return dict
-# weatherDataAPI(userIPdataAPI()[0], userIPdataAPI()[1]) #default location
-
-# weatherDataAPI(geoCodingAPI("Pakpattan")[0], geoCodingAPI("Pakpattan")[1]) #user given location
+    else:
+        return forecastChecking(lat, lon)
 
 def homePage():
     userName = str(input("Enter your name: "))
     print(f"{userName}, welcome to WheaTheraPy!")
     while True:
-        locationConsent = int(input("""Would you like to see weather conditions of:
-                                1. Current Location
-                                2. Any other City: """))
+        locationConsent = int(input("Would you like to see weather conditions of:\n1. Current Location\n2. Any other City: "))
         if locationConsent != 1 and locationConsent != 2:
             print("Please either choose 1 or 2.")
             pass
         else:
             while True:
-                featureConsent = int(input("""Which properties would you like to see:
-                                           1. Temperature
-                                           2. Minimum Temperature
-                                           3. Maximum Temperature
-                                           4. Humidity
-                                           5. Windspeed
-                                           6. All of these: """))
-                if featureConsent != 1 and featureConsent != 2 and featureConsent != 3 and featureConsent != 4 and featureConsent != 5 and featureConsent != 6:
-                    print("Please choose a number between 1 to 6!")
+                featureConsent = int(input("Which properties would you like to see:\n1. Temperature\n2. Minimum Temperature\n3. Maximum Temperature\n4. Humidity\n5. Windspeed\n6. All of above\n7. 5-Days Forecast: "))
+                if featureConsent != 1 and featureConsent != 2 and featureConsent != 3 and featureConsent != 4 and featureConsent != 5 and featureConsent != 6 and featureConsent != 7:
+                    print("Please choose a number between 1 to 7!")
                     pass
                 else:
                     break
             break
     
     if locationConsent == 1:
-        result = featureSelection(weatherDataAPI(userIPdataAPI()[0], userIPdataAPI()[1]), featureConsent)
+        lat, lon, city = userIPdataAPI()
+        result = featureSelection(weatherDataAPI(lat, lon), featureConsent, lat=lat, lon=lon)
         print(f"""--------- WEATHER DASHBOARD ---------""")
         for key, value in result.items():
-            try:
-                numberValue = float(value)
-                if '.' in str(value) and len(str(value).split('.')[1]) > 2:
-                    value = f"{numberValue:.1f}"
-            except ValueError:
-                pass
+            if "-" in key and ":" in key:
+                print(f"| {key}: {value} °C")
+                print("-------------------------------------")
+                time.sleep(2)
+            else:
+                try:
+                    numberValue = float(value)
+                    if '.' in str(value) and len(str(value).split('.')[1]) > 2:
+                        value = f"{numberValue:.1f}"
+                except ValueError:
+                    pass
 
-            unit = ""
+                unit = ""
 
-            if "Temperature" in key:
-                unit = " °C"
-            elif "Humidity" in key:
-                unit = "%"
-            elif "Wind" in key:
-                unit = " m/s"
-            print(f"""-------------------------------------
-| {key}: {value}{unit}
--------------------------------------""")
+                if "Temperature" in key:
+                    unit = " °C"
+                elif "Humidity" in key:
+                    unit = "%"
+                elif "Wind" in key:
+                    unit = " m/s"
+                print(f"-------------------------------------\n| {key}: {value}{unit}\n-------------------------------------")
+                time.sleep(2)
+    elif locationConsent == 2:
+        cityName = input("Enter the city name: ")
+        latitude = geoCodingAPI(cityName)[0]
+        longitude = geoCodingAPI(cityName)[1]
+        weatherData = weatherDataAPI(latitude, longitude)
+        result = featureSelection(weatherData, featureConsent,lat=latitude, lon=longitude)
+        print(f"""--------- WEATHER DASHBOARD ---------""")
+        for key, value in result.items():
+            if "-" in key and ":" in key:
+                print(f"| {key}: {value} °C")
+                print("-------------------------------------")
+                time.sleep(2)
+            else:
+                try:
+                    numberValue = float(value)
+                    if '.' in str(value) and len(str(value).split('.')[1]) > 2:
+                        value = f"{numberValue:.1f}"
+                except ValueError:
+                    pass
+
+                unit = ""
+
+                if "Temperature" in key:
+                    unit = " °C"
+                elif "Humidity" in key:
+                    unit = "%"
+                elif "Wind" in key:
+                    unit = " m/s"
+                print(f"-------------------------------------\n| {key}: {value}{unit}\n-------------------------------------")
+                time.sleep(2)
 
 homePage()
