@@ -118,6 +118,25 @@ def homePage():
     
     if locationConsent == 1:
         result = featureSelection(weatherDataAPI(userIPdataAPI()[0], userIPdataAPI()[1]), featureConsent)
-        print(result)
+        print(f"""--------- WEATHER DASHBOARD ---------""")
+        for key, value in result.items():
+            try:
+                numberValue = float(value)
+                if '.' in str(value) and len(str(value).split('.')[1]) > 2:
+                    value = f"{numberValue:.1f}"
+            except ValueError:
+                pass
+
+            unit = ""
+
+            if "Temperature" in key:
+                unit = " °C"
+            elif "Humidity" in key:
+                unit = "%"
+            elif "Wind" in key:
+                unit = " m/s"
+            print(f"""-------------------------------------
+| {key}: {value}{unit}
+-------------------------------------""")
 
 homePage()
