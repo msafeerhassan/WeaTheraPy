@@ -19,6 +19,8 @@
 3. Enter the API Key.
 4. Enjoy :)
 
+Demo Video: [Video](https://cdn.hackclub.com/019f2b78-2a67-73aa-b420-1aeceab6adef/202607040944.mp4)
+
 #### Screenshots
 
 ![Image 1](https://user-cdn.hackclub-assets.com/019e7d80-20ca-7b6b-b67c-54e0e07bf576/screenshot_2026-05-31_150500.png)
